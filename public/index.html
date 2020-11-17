@@ -4,6 +4,12 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>⚔ Same Site</title>
+    <style>
+      html,
+      body {
+        font-family: sans-serif;
+      }
+    </style>
   </head>
   <body>
     <h1>Test http-only cookies</h1>
@@ -11,34 +17,48 @@
 
     If this pages is running on the same domain/port as the server (i.e.
     <a href="http://localhost:3023">http://localhost:3023</a>), a
-    <code>get</code> to an endpoint that does <code>set-cookie</code> should
+    <code>GET</code> to an endpoint that does <code>set-cookie</code> should
     store this in the browser, and every subsequent call to an endpoint should
     send the value from this cookie in the request.
 
-    <h2>Step 1 - "login"</h2>
+    <h2>Step 1 - "log in"</h2>
 
     <p>
-      The first call functions as a log in and does a <code>get</code> to an
+      The first call functions as a "log in" and does a <code>GET</code> to an
       eindpoint that does <code>set-cookie</code>. The response contains an
       http-only cookie with the token.
-
-      <input id="password" value="test" />
-      <button id="login">login</button>
-      <input id="firstname" disabled />
     </p>
+
+    <p>
+      password: <input id="password" value="test" />
+      <button id="login">login</button>
+    </p>
+    <p>logged in as: <input id="firstname" disabled /></p>
 
     <h2>Step 2 - authenticated endpoints</h2>
 
-    <p>For each subsequent call the cookie is added by the browser.</p>
-
-    <button id="getNickName">get user nickname</button>
-    <input id="nickname" disabled />
-
-    <h2>Step 3 - "logout"</h2>
+    <p>
+      For each subsequent call the cookie is added by the browser. Click the
+      "get user nickname" button to observe that the nickname is retrieved. In
+      the network traffic it will be visible that the request has been enriched
+      with the authentication cookie in the header.
+    </p>
 
     <p>
-      After logout the getNickName endpoint does not work anymore, because the
-      Authentication cookies has been overwritten.
+      <button id="getNickName">get user nickname</button>
+    </p>
+    <p>Retrieved nickname: <input id="nickname" disabled /></p>
+
+    <h2>Step 3 - "log out"</h2>
+
+    <p>
+      After log out the getNickName endpoint does not work anymore, because the
+      authentication cookies has been overwritten.
+    </p>
+    <p>Click the "logout" button to observe that "logged in as" is reset.</p>
+    <p>
+      Click the "get user nickname" button to observe that the nickname can't be
+      retrieved.
     </p>
 
     <button id="logout">logout</button>
@@ -53,7 +73,6 @@
       // TODO also works, but...
     </p>
 
-    // TODO font
     <div id="xhrcontrols" style="display: block">
       <button id="getNickNameXHR">get user nickname with XHR</button>
       <input type="text" id="nicknameXHR" disabled />
@@ -79,18 +98,15 @@
                 }),
               }
             : {};
-        return fetch(
-          `https://localhost:3023/api/${endpointName}`,
-          {
-            ...options,
-            method,
-            mode: "cors" /* TODO why? */,
-            headers: {
-              "Content-Type": "application/json",
-            },
-            ...bodyOptions,
-          }
-        ).then((data) => data.json());
+        return fetch(`https://localhost:3023/api/${endpointName}`, {
+          ...options,
+          method,
+          mode: "cors" /* TODO why? */,
+          headers: {
+            "Content-Type": "application/json",
+          },
+          ...bodyOptions,
+        }).then((data) => data.json());
       };
 
       document.getElementById("login").addEventListener("click", async () => {
