@@ -63,7 +63,7 @@ app.post("/api/login", (req, res) => {
   }
 });
 
-app.post("/api/nickname", (req, res) => {
+app.get("/api/nickname", (req, res) => {
   logMe("/api/nickname", "cookies=", req.cookies.Authentication);
   if (req.cookies.Authentication === SUPER_SECRET_TOKEN) {
     res.send({ nickname: "magneto" });
