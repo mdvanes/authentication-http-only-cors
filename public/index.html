@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SameSite</title>
+  </head>
+  <body>
+    <h1>Test http-only cookies</h1>
+    <h2 id="cors"></h2>
+
+    If this pages is running on the same domain/port as the server (i.e.
+    <a href="http://localhost:3023">http://localhost:3023</a>), a
+    <code>get</code> to an endpoint that does <code>set-cookie</code> should
+    store this in the browser, and every subsequent call to an endpoint should
+    send the value from this cookie in the request.
+
+    <h2>Step 1 - "login"</h2>
+
+    <p>
+      The first call functions as a log in and does a <code>get</code> to an
+      eindpoint that does <code>set-cookie</code>. The response contains an
+      http-only cookie with the token.
+
+      <input id="password" value="test" />
+      <button id="login">login</button>
+      <input id="firstname" disabled />
+    </p>
+
+    <h2>Step 2 - authenticated endpoints</h2>
+
+    <p>For each subsequent call the cookie is added by the browser.</p>
+
+    <button id="getNickName">get user nickname</button>
+    <input id="nickname" disabled />
+
+    <h2>Step 3 - "logout"</h2>
+
+    <p>
+      After logout the getNickName endpoint does not work anymore, because the
+      Authentication cookies has been overwritten.
+    </p>
+
+    <button id="logout">logout</button>
+
+    <h2>Step 4 - CORS</h2>
+
+    <p>
+      Open <a href="http://localhost:3024">http://localhost:3024</a> in a new
+      browser window. This runs the same client on a different port to be able
+      to test CORS. Run step 1 - 3 in that window.
+    </p>
+
+    <script>
+      const isCors = top.location.port === "3024";
+
+      if (isCors) {
+        document.body.style.backgroundColor = "#88c2bc";
+        document.getElementById("cors").innerText = "CORS * ".repeat("18");
+      }
+
+      const postData = async (url) => {};
+    </script>
+  </body>
+</html>
