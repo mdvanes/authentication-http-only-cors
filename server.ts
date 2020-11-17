@@ -72,7 +72,7 @@ app.get("/api/nickname", (req, res) => {
   }
 });
 
-app.post("/api/logout", (req, res) => {
+app.get("/api/logout", (req, res) => {
   logMe("/api/logout");
   res.cookie(...createAuthCookie("")).send({ firstname: "" });
 });

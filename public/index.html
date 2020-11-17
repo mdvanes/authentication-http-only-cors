@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>SameSite</title>
+    <title>⚔ Same Site</title>
   </head>
   <body>
     <h1>Test http-only cookies</h1>
@@ -48,13 +48,14 @@
     <p>
       Open <a href="http://localhost:3024">http://localhost:3024</a> in a new
       browser window. This runs the same client on a different port to be able
-      to test CORS. Run steps 1 and 2 in that window, and use the butto nbewlow
+      to test CORS. Run steps 1 and 2 in that window, and use the button below
       to see that CORS does not work with Fetch, but it does work with XHR/Ajax.
+      // TODO also works, but...
     </p>
 
-    // TODO font // TODO rename corscontros, getnicknamecors to XHR
-    <div id="corscontrols" style="display: block">
-      <button id="getNickNameCORS">get user nickname with XHR</button>
+    // TODO font
+    <div id="xhrcontrols" style="display: block">
+      <button id="getNickNameXHR">get user nickname with XHR</button>
       <input type="text" id="nicknameXHR" disabled />
     </div>
 
@@ -64,41 +65,52 @@
       if (isCors) {
         document.body.style.backgroundColor = "#88c2bc";
         document.getElementById("cors").innerText = "CORS * ".repeat("18");
-        document.getElementById("corscontrols").style.display = "block";
+        document.title = "⚔ CORS";
       }
 
-      const postData = async (url) => {
+      const fetchData = async (endpointName, method = "GET") => {
         const options = isCors ? { credentials: "include" } : {};
-        const response = await fetch(`https://localhost:3023/api/${url}`, {
-          ...options,
-          method: "POST",
-          mode: "cors" /* TODO why? */,
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            username: "myuser",
-            password: document.getElementById("password"),
-          }),
-        }).then((data) => data.json());
-
-        document.getElementById("firstname").value = response.firstname;
+        const bodyOptions =
+          method === "POST"
+            ? {
+                body: JSON.stringify({
+                  username: "myuser",
+                  password: document.getElementById("password").value,
+                }),
+              }
+            : {};
+        return fetch(
+          `https://localhost:3023/api/${endpointName}`,
+          {
+            ...options,
+            method,
+            mode: "cors" /* TODO why? */,
+            headers: {
+              "Content-Type": "application/json",
+            },
+            ...bodyOptions,
+          }
+        ).then((data) => data.json());
       };
 
-      document.getElementById("login").addEventListener("click", () => {
-        postData("login");
+      document.getElementById("login").addEventListener("click", async () => {
+        const response = await fetchData("login", "POST");
+        document.getElementById("firstname").value = response.firstname;
       });
-      document.getElementById("logout").addEventListener("click", () => {
-        postData("logout");
-      }); // TODO this can be a GET
+
+      document.getElementById("logout").addEventListener("click", async () => {
+        const response = await fetchData("logout");
+        document.getElementById("firstname").value = response.firstname;
+      });
 
       document
         .getElementById("getNickName")
         .addEventListener("click", async () => {
-          const response = await fetch(
-            "https://localhost:3023/api/nickname",
-            { credentials: "include" } // TODO re-use condition from above
-          ).then((data) => data.json());
+          // const response = await fetch(
+          //   "https://localhost:3023/api/nickname",
+          //   { credentials: "include" } // TODO re-use condition from above
+          // ).then((data) => data.json());
+          const response = await fetchData("nickname");
           document.getElementById("nickname").value = response.nickname;
         });
 
@@ -112,14 +124,14 @@
             if (xhr.status === 200) {
               resolve(xhr.response);
             } else {
-              reject(`status is ${xhr.status}`); // TODO also resolve(xhr.response); ?
+              reject(`status is ${xhr.status}`);
             }
           };
           xhr.send();
         });
 
       document
-        .getElementById("getNickNameCORS")
+        .getElementById("getNickNameXHR")
         .addEventListener("click", async () => {
           try {
             const response = await getNickNameWithXHR(
