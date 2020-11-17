@@ -1,7 +1,9 @@
-const express = require("express");
-const bodyParser = require("body-parser");
-const cookieParser = require("cookie-parser");
-const cors = require("cors");
+import express, { CookieOptions, Response as ExpressResponse } from "express";
+import https from "https";
+import fs from "fs";
+import bodyParser from "body-parser";
+import cookieParser from "cookie-parser";
+import cors from "cors";
 const app = express();
 
 const port = 3023;
@@ -13,11 +15,12 @@ app.use(cookieParser());
 app.use(express.static("public"));
 
 // Allow CORS
-// This is only allowed when no `credentials` option of `fetch` is not set or is set to `none`. Otherwise, Access-Control-Allow-Origin may not be be `*`.
+// This simple version is only allowed when no `credentials` option of `fetch` is not set or is set to `none`. Otherwise, Access-Control-Allow-Origin may not be be `*`.
 // app.use(cors());
 const corsOptionsDelegate = (req, callback) => {
-  if (req.header("Origin") === "http://localhost:3024") {
+  if (req.header("Origin") === "https://localhost:3024") {
     // origin: true sets Access-Control-Allow-Origin to req.header("Origin")
+    // credentials: true sets Access-Control-Allow-Credentials to true, which makes it allowed to send credentials cross origin
     callback(null, { origin: true, credentials: true });
   } else {
     callback(null, { origin: false });
@@ -25,11 +28,16 @@ const corsOptionsDelegate = (req, callback) => {
 };
 app.use(cors(corsOptionsDelegate));
 
-const createAuthCookie = (token: any) => [
+const createAuthCookie = (
+  token: string
+): [name: string, value: string, options: CookieOptions] => [
   "Authentication",
   token,
   // TODO if secure: true, the cookie only works over HTTPS. It is send in the response, but is blocked by the browser from being added to the active cookies
-  { httpOnly: true, maxAge: 250000, secure: false },
+  // In this state: it is possible to create the http-only cookie over cors, but it is not send with each fetch request, even if { credentials: true }
+  // { httpOnly: true, maxAge: 250000, secure: false },
+  // In this state: SameSite None only works when Secure true!
+  { httpOnly: true, maxAge: 250000, secure: true, sameSite: "none" },
 ];
 
 const logMe = (endpoint, msg = "", ...rest) => {
@@ -69,6 +77,7 @@ app.post("/api/logout", (req, res) => {
   res.cookie(...createAuthCookie("")).send({ firstname: "" });
 });
 
+/*
 app.listen(port, () => {
   console.log("running on port 3023");
 });
@@ -77,5 +86,30 @@ app.listen(port, () => {
 const otherDomainApp = express();
 otherDomainApp.use(express.static("public"));
 otherDomainApp.listen(3024, () => {
+  console.log("running on port 3024");
+});
+*/
+const server = https.createServer(
+  {
+    key: fs.readFileSync("localhost-privkey.pem"),
+    cert: fs.readFileSync("localhost-cert.pem"),
+  },
+  app
+);
+server.listen(port, () => {
+  console.log("running on port 3023");
+});
+
+// For testing CORS, start another server
+const otherDomainApp = express();
+otherDomainApp.use(express.static("public"));
+const otherDomainServer = https.createServer(
+  {
+    key: fs.readFileSync("localhost-privkey.pem"),
+    cert: fs.readFileSync("localhost-cert.pem"),
+  },
+  app
+);
+otherDomainServer.listen(3024, () => {
   console.log("running on port 3024");
 });
